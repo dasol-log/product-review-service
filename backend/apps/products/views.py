@@ -19,18 +19,7 @@ from .models import Product
 # Product 데이터를 JSON으로 변환하는 Serializer
 from .serializers import ProductSerializer
 
-
-class ProductPagination(PageNumberPagination):
-    """
-    페이지네이션 설정
-
-    - 기본 페이지 크기: 6
-    - 클라이언트에서 page_size 조정 가능
-    - 최대 20개까지 허용
-    """
-    page_size = 6
-    page_size_query_param = "page_size"
-    max_page_size = 20
+from .paginations import ProductPageNumberPagination
 
 
 class ProductViewSet(ViewSet):
@@ -59,7 +48,7 @@ class ProductViewSet(ViewSet):
         queryset = Product.objects.all().order_by("-id")
 
         # 2️⃣ 페이지네이션 적용
-        paginator = ProductPagination()
+        paginator = ProductPageNumberPagination()
         page = paginator.paginate_queryset(queryset, request)
 
         # 3️⃣ 여러 데이터이므로 many=True

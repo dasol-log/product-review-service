@@ -130,3 +130,8 @@ AUTH_USER_MODEL = 'accounts.User'
 MEDIA_URL = '/media/'   
 # 실제 업로드 파일 저장 폴더  
 MEDIA_ROOT = BASE_DIR / 'media'
+
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 3,
+}
