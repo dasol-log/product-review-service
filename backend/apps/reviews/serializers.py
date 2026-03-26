@@ -76,17 +76,49 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    uploaded_images = serializers.ListField(
+        child=serializers.ImageField(),
+        write_only=True,
+        required=False
+    )
+
     class Meta:
         model = Review
         fields = [
             "id",
-            "user",         # FK (입력 검증 대상)
-            "product",      # FK (입력 검증 대상)
-            "content",      # 입력 데이터
-            "rating",       # 입력 데이터
+            "user",
+            "product",
+            "content",
+            "rating",
             "is_public",
-            "images",       # nested (출력 전용)
-            "ai_result",    # nested (출력 전용)
+            "images",
+            "ai_result",
+            "uploaded_images",
             "created_at",
             "updated_at",
         ]
+
+        read_only_fields = [
+            "id",
+            "user",
+            "images",
+            "ai_result",
+            "created_at",
+            "updated_at",
+        ]
+
+    def create(self, validated_data):
+        """
+        리뷰 생성 + 이미지 저장 처리
+        """
+
+        uploaded_images = validated_data.pop("uploaded_images", [])
+        review = Review.objects.create(**validated_data)
+
+        for image_file in uploaded_images:
+            ReviewImage.objects.create(
+                review=review,
+                image=image_file
+            )
+
+        return review

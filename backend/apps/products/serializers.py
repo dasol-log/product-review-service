@@ -17,3 +17,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "image",
             "created_at",
         ]
+        read_only_fields = [
+            "id",
+            "created_at",
+        ]
