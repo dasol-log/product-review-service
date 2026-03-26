@@ -4,6 +4,8 @@ from rest_framework.viewsets import ViewSet
 # API 응답을 반환하기 위한 객체 (JSON 형태로 반환됨)
 from rest_framework.response import Response
 
+from rest_framework import generics, permissions
+
 # 객체가 없을 경우 404 에러를 자동으로 발생시키는 함수
 from django.shortcuts import get_object_or_404
 
@@ -11,7 +13,7 @@ from django.shortcuts import get_object_or_404
 from .models import User
 
 # User 데이터를 JSON으로 변환해주는 Serializer
-from .serializers import UserSerializer
+from .serializers import UserSerializer, SignupSerializer
 
 
 class UserViewSet(ViewSet):
@@ -20,7 +22,12 @@ class UserViewSet(ViewSet):
 
     - list     : 전체 사용자 조회 (GET /users/)
     - retrieve : 특정 사용자 조회 (GET /users/{id}/)
+
+    현재는 조회 전용으로 사용
+    필요하면 나중에 관리자 권한으로 제한 가능
     """
+
+    permission_classes = [permissions.AllowAny]
 
     def list(self, request):
         """
@@ -61,3 +68,39 @@ class UserViewSet(ViewSet):
 
         # 3️⃣ JSON 형태로 응답 반환
         return Response(serializer.data)
+    
+
+class SignupAPIView(generics.CreateAPIView):
+    """
+    회원가입 API
+
+    POST /accounts/signup/
+
+    요청 예시:
+    {
+        "username": "testuser",
+        "email": "test@example.com",
+        "password": "1234",
+        "password_confirm": "1234"
+    }
+    """
+
+    serializer_class = SignupSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class MeAPIView(generics.RetrieveAPIView):
+    """
+    현재 로그인한 사용자 정보 조회 API
+
+    GET /accounts/me/
+
+    헤더:
+    Authorization: Bearer <access_token>
+    """
+
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
