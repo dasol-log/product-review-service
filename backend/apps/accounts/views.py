@@ -4,7 +4,7 @@ from rest_framework.viewsets import ViewSet
 # API 응답을 반환하기 위한 객체 (JSON 형태로 반환됨)
 from rest_framework.response import Response
 
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 
 # 객체가 없을 경우 404 에러를 자동으로 발생시키는 함수
 from django.shortcuts import get_object_or_404
@@ -40,7 +40,7 @@ class UserViewSet(ViewSet):
         """
 
         # 1️⃣ 모든 사용자 데이터 조회 (QuerySet 반환)
-        users = User.objects.all()
+        users = User.objects.all().order_by("-id")
 
         # 2️⃣ 여러 개 데이터이므로 many=True 설정
         serializer = UserSerializer(users, many=True)
@@ -87,6 +87,22 @@ class SignupAPIView(generics.CreateAPIView):
 
     serializer_class = SignupSerializer
     permission_classes = [permissions.AllowAny]
+
+    # [추가] 회원가입 성공 시 비밀번호가 아닌 안전한 사용자 정보만 응답하도록 오버라이드
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        return Response(
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "created_at": user.created_at,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class MeAPIView(generics.RetrieveAPIView):
