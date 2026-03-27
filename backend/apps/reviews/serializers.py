@@ -1,124 +1,163 @@
 from rest_framework import serializers
-from .models import Review, ReviewImage, ReviewAI
+from .models import Review, ReviewImage
 
 
-# 📌 ReviewImage (리뷰 이미지) Serializer
-# → Review와 1:N 관계 (리뷰 하나에 이미지 여러 개)
 class ReviewImageSerializer(serializers.ModelSerializer):
-    """
-    리뷰 이미지 출력용 Serializer
-
-    역할:
-    - ReviewImage 모델 → JSON 변환
-    - ReviewSerializer 내부에서 nested로 사용됨 (읽기 전용)
-    """
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = ReviewImage
         fields = [
             "id",
             "image",
+            "image_url",
             "created_at",
         ]
 
+    def get_image_url(self, obj):
+        request = self.context.get("request")
 
-# 📌 ReviewAI (AI 분석 결과) Serializer
-# → Review와 1:1 관계
-class ReviewAISerializer(serializers.ModelSerializer):
-    """
-    리뷰 AI 분석 결과 Serializer
+        if not obj.image:
+            return None
 
-    역할:
-    - AI 감정 분석 결과를 JSON으로 변환
-    - ReviewSerializer에서 nested로 포함됨 (읽기 전용)
-    """
+        try:
+            image_url = obj.image.url
+        except Exception:
+            return None
 
-    class Meta:
-        model = ReviewAI
-        fields = [
-            "sentiment",
-            "confidence",
-            "keywords",
-        ]
+        if request:
+            return request.build_absolute_uri(image_url)
+
+        return image_url
 
 
-# 📌 Review 메인 Serializer
-class ReviewSerializer(serializers.ModelSerializer):
-    """
-    Review CRUD + 관계 데이터 Serializer
-
-    역할:
-    1. 입력 검증
-        - user, product, content, rating 등의 데이터 검증
-        - create/update 시 request.data 검증 수행
-
-    2. 출력 변환
-        - Review 데이터를 JSON으로 변환
-
-    3. 관계 데이터 포함 (Nested Serializer)
-        - images (1:N) → 리뷰 이미지 목록 포함
-        - ai_result (1:1) → AI 분석 결과 포함
-    """
-
-    # ReviewImage 연결 (related_name="images")
-    # → Review.objects.get(...).images 로 접근 가능
-    # → many=True: 여러 개 이미지
-    # → read_only=True: 생성/수정은 여기서 안함 (출력만)
-    images = ReviewImageSerializer(
-        many=True,
-        read_only=True
-    )
-
-    # ReviewAI 연결 (related_name="ai_result")
-    # → 1:1 관계
-    # → read_only=True: AI 결과는 별도 로직에서 생성
-    ai_result = ReviewAISerializer(
-        read_only=True
-    )
-
-    uploaded_images = serializers.ListField(
-        child=serializers.ImageField(),
-        write_only=True,
+class ReviewAISerializer(serializers.Serializer):
+    sentiment = serializers.CharField(read_only=True)
+    score = serializers.FloatField(read_only=True)
+    summary = serializers.CharField(read_only=True, required=False)
+    keywords = serializers.ListField(
+        child=serializers.CharField(),
+        read_only=True,
         required=False
     )
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        source="user.username",
+        read_only=True
+    )
+
+    # =========================================================
+    # [인터랙티브 추가]
+    # 좋아요 개수 표시용 필드
+    # =========================================================
+    likes_count = serializers.SerializerMethodField()
+
+    # =========================================================
+    # [인터랙티브 추가]
+    # 북마크 개수 표시용 필드
+    # =========================================================
+    bookmarks_count = serializers.SerializerMethodField()
+
+    # =========================================================
+    # [인터랙티브 추가]
+    # 현재 로그인 사용자가 이 리뷰에 좋아요를 눌렀는지 여부
+    # =========================================================
+    is_liked = serializers.SerializerMethodField()
+
+    # =========================================================
+    # [인터랙티브 추가]
+    # 현재 로그인 사용자가 이 리뷰를 북마크했는지 여부
+    # =========================================================
+    is_bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Review
         fields = [
             "id",
             "user",
+            "username",
             "product",
             "content",
             "rating",
             "is_public",
-            "images",
-            "ai_result",
-            "uploaded_images",
             "created_at",
-            "updated_at",
-        ]
 
+            # =================================================
+            # [인터랙티브 추가]
+            # 좋아요 수
+            # =================================================
+            "likes_count",
+
+            # =================================================
+            # [인터랙티브 추가]
+            # 북마크 수
+            # =================================================
+            "bookmarks_count",
+
+            # =================================================
+            # [인터랙티브 추가]
+            # 현재 유저 좋아요 여부
+            # =================================================
+            "is_liked",
+
+            # =================================================
+            # [인터랙티브 추가]
+            # 현재 유저 북마크 여부
+            # =================================================
+            "is_bookmarked",
+        ]
         read_only_fields = [
             "id",
             "user",
-            "images",
-            "ai_result",
+            "username",
             "created_at",
-            "updated_at",
+
+            # =================================================
+            # [인터랙티브 추가]
+            # 계산해서 보여주는 값이라 읽기 전용
+            # =================================================
+            "likes_count",
+            "bookmarks_count",
+            "is_liked",
+            "is_bookmarked",
         ]
 
-    def create(self, validated_data):
-        """
-        리뷰 생성 + 이미지 저장 처리
-        """
+    # =========================================================
+    # [인터랙티브 추가]
+    # 해당 리뷰의 좋아요 개수 반환
+    # related_name='likes' 기준
+    # =========================================================
+    def get_likes_count(self, obj):
+        return obj.likes.count()
 
-        uploaded_images = validated_data.pop("uploaded_images", [])
-        review = Review.objects.create(**validated_data)
+    # =========================================================
+    # [인터랙티브 추가]
+    # 해당 리뷰의 북마크 개수 반환
+    # related_name='bookmarks' 기준
+    # =========================================================
+    def get_bookmarks_count(self, obj):
+        return obj.bookmarks.count()
 
-        for image_file in uploaded_images:
-            ReviewImage.objects.create(
-                review=review,
-                image=image_file
-            )
+    # =========================================================
+    # [인터랙티브 추가]
+    # 현재 로그인한 사용자가 이 리뷰에 좋아요를 눌렀는지 확인
+    # 비로그인 사용자는 False
+    # =========================================================
+    def get_is_liked(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.likes.filter(user=request.user).exists()
 
-        return review
+    # =========================================================
+    # [인터랙티브 추가]
+    # 현재 로그인한 사용자가 이 리뷰를 북마크했는지 확인
+    # 비로그인 사용자는 False
+    # =========================================================
+    def get_is_bookmarked(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.bookmarks.filter(user=request.user).exists()
