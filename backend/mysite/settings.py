@@ -9,6 +9,8 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
+
+import os
 import environ
 from pathlib import Path
 from datetime import timedelta
@@ -17,8 +19,45 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-env = environ.Env()  
-environ.Env.read_env(BASE_DIR.parent / ".env")
+# =========================================================
+# [추가] Celery + Redis 설정
+# =========================================================
+
+# [추가] Redis 주소
+# docker-compose 사용 시 보통 redis://redis:6379/0
+# 로컬 직접 실행 시 redis://127.0.0.1:6379/0
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+
+# [추가] Celery broker / backend
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+
+# [추가] 직렬화 포맷
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
+# [추가] 시간대
+CELERY_TIMEZONE = "Asia/Seoul"
+
+# [추가] 작업 결과 만료 시간(1시간)
+CELERY_RESULT_EXPIRES = 3600
+
+# [추가] worker가 한 번에 너무 많은 작업을 오래 붙잡지 않도록 설정
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
+# [추가] 작업 시작 상태 추적
+CELERY_TASK_TRACK_STARTED = True
+
+# [추가] 긴 작업 안정성용
+CELERY_TASK_TIME_LIMIT = 60 * 10
+CELERY_TASK_SOFT_TIME_LIMIT = 60 * 8
+
+# [추가] 테스트/개발 중 eager 모드 쓰고 싶으면 환경변수로 제어 가능
+CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_TASK_ALWAYS_EAGER", "False") == "True"
+CELERY_TASK_EAGER_PROPAGATES = True
+
+env = environ.Env()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -119,7 +158,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
 
