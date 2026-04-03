@@ -721,3 +721,63 @@ footer{
         padding: 24px;
     }
 }
+
+.ai-analyze-btn {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    background-color: #2563eb;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ai-analyze-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.ai-result-box {
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid #dbe2ea;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.ai-result-inner p {
+    margin: 6px 0;
+}
+
+.ai-similar-review-list {
+    margin-top: 10px;
+    padding-left: 18px;
+}
+
+.ai-similar-review-item {
+    margin-bottom: 12px;
+}
+
+/* [추가] 리뷰 목록 상단 안내 문구 */
+.review-guide-box {
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+}
+
+.review-guide-text {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1e3a8a;
+}
+
+/* [추가] AI 결과 내 보조 안내 문구 */
+.ai-sub-guide {
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}

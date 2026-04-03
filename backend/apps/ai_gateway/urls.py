@@ -1,7 +1,10 @@
 from django.urls import path
-from .views import SentimentAnalysisAPIView
-
+from .views import (
+    EmbeddingAPIView,
+    SimilarityAPIView,
+    ReviewAnalyzeAPIView,
+)
 
 urlpatterns = [
-    path("sentiment/", SentimentAnalysisAPIView.as_view()),
+    path("reviews/<int:review_id>/analyze/", ReviewAnalyzeAPIView.as_view(), name="ai-review-analyze"),
 ]

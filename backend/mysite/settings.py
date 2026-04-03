@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'apps.reviews',
     'apps.interactions',
     'apps.ai_gateway',
-
+    'apps.crawling',
 ]
 
 MIDDLEWARE = [
@@ -158,3 +158,5 @@ SIMPLE_JWT = {
     "UPDATE_LAST_LOGIN": False,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+FASTAPI_BASE_URL = "http://localhost:8001"
