@@ -13,6 +13,22 @@ from apps.reviews.models import Review
 
 from .services import FastAPIClient
 
+# [추가] AI 추론 결과 저장 모델 import
+from .models import ReviewSimilarityResult
+
+
+# ============================
+# [추가] 유사도 점수 → 사용자용 문구 변환 함수
+# ============================
+def get_similarity_label(score: float) -> str:
+    if score > 0.7:
+        return "매우 비슷"
+    if score > 0.5:
+        return "비슷"
+    if score > 0.3:
+        return "약간 비슷"
+    return "관련 있음"
+
 
 class EmbeddingAPIView(APIView):
     def post(self, request):
